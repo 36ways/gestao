@@ -4,204 +4,226 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>36WAYS Gestão</title>
-<meta name="theme-color" content="#0e0d0b">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="36WAYS">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <script src="lib/supabase.js"></script>
+<script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: brand bar + nav on top (bottom tab bar on phones), one view at a time, records in modal sheets.
-   Single dark theme on purpose: it is the 36WAYS brand (near-black, brass, Japanese archive). */
+/* Layout: logo + menu with icons on top (icon tab bar at the bottom on phones), one screen at a time, records in sheets.
+   Light theme. Every category and every stock state has its own colour so things can be told apart at a glance. */
 :root{
-  color-scheme: dark;
-  --bg:#0e0d0b; --panel:#161512; --panel-2:#1e1c18; --panel-3:#262420;
-  --line:rgba(236,228,206,.09); --line-2:rgba(236,228,206,.17);
-  --text:#ece5d3; --dim:#a39b86; --faint:#6b6455;
-  --brass:#c9a24a; --brass-2:#e2c27a; --brass-dim:rgba(201,162,74,.14);
-  --good:#78b48f; --good-dim:rgba(120,180,143,.14);
-  --bad:#d86a50; --bad-dim:rgba(216,106,80,.14);
-  --warn:#dcae4b; --warn-dim:rgba(220,174,75,.14);
-  --f-display:'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', Georgia, serif;
+  color-scheme: light;
+  --bg:#f3f2ee; --panel:#ffffff; --panel-2:#f8f7f4; --panel-3:#eeece6;
+  --line:#e7e4dc; --line-2:#d8d4c9;
+  --text:#1c1b18; --dim:#55524a; --faint:#8a867b;
+  --ink:#1c1b18; --on-ink:#ffffff;
+  --brass:#9a6f14; --brass-2:#7d5a0e; --brass-dim:#f6eedc;
+  --good:#1b7a45; --good-dim:#e2f2e8;
+  --bad:#c0391f; --bad-dim:#fbe6e1;
+  --warn:#a35f00; --warn-dim:#fdf0d8;
+  --info:#2458a6; --info-dim:#e3ecf8;
+  --muted-dim:#ecebe7;
+  /* category colours */
+  --c-jantes:#2458a6; --c-pecas:#0e7268; --c-roupa:#7a3fd1; --c-colec:#b25407; --c-acess:#5f6b12; --c-outro:#6b6f78;
+  --c-pink:#b5175f;
   --f-body:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --f-mono:'JetBrains Mono', ui-monospace, 'Cascadia Mono', Menlo, monospace;
-  --r:10px;
+  --r:12px;
 }
 *{box-sizing:border-box}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 img{max-width:100%}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:14px;line-height:1.45;margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:14.5px;line-height:1.45;margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 .num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
-h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
-a{color:var(--brass-2)}
-:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+a{color:var(--info)}
+:focus-visible{outline:2px solid var(--info);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.ic{width:18px;height:18px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* ---------- top bar ---------- */
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-.top-in{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;display:flex;align-items:center;gap:20px}
-.brand{display:flex;align-items:baseline;gap:10px;flex-shrink:0}
-.brand b{font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:.04em}
-.brand span{font-family:var(--f-mono);font-size:10px;letter-spacing:.2em;color:var(--brass);text-transform:uppercase}
-nav.tabs{display:flex;gap:2px;flex:1;min-width:0}
-nav.tabs a{color:var(--dim);text-decoration:none;padding:8px 12px;border-radius:7px;font-weight:500;white-space:nowrap}
-nav.tabs a:hover{color:var(--text);background:var(--panel)}
-nav.tabs a[aria-current="page"]{color:var(--brass-2);background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line-2)}
-.sync{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);display:flex;align-items:center;gap:6px;white-space:nowrap}
-.sync i{width:7px;height:7px;border-radius:50%;background:var(--faint);display:inline-block}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;flex-shrink:0}
+.brand img{height:34px;width:auto;display:block}
+nav.tabs{display:flex;gap:4px;flex:1;min-width:0}
+nav.tabs a{color:var(--dim);text-decoration:none;padding:8px 12px;border-radius:9px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:7px}
+nav.tabs a:hover{color:var(--text);background:var(--panel-3)}
+nav.tabs a[aria-current="page"]{color:var(--on-ink);background:var(--ink)}
+.sync{font-size:11.5px;color:var(--faint);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--faint);display:inline-block}
 .sync.on i{background:var(--good)} .sync.off i{background:var(--bad)}
 
 /* ---------- main ---------- */
 main{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 40px}
 .view{display:flex;flex-direction:column;gap:18px}
 .vhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.vhead h1{font-family:var(--f-display);font-weight:800;font-size:28px;letter-spacing:.01em}
+.vhead h1{font-size:26px;display:flex;align-items:center;gap:10px}
+.vhead h1 .ic{width:26px;height:26px;color:var(--faint)}
 .vhead p{margin:4px 0 0;color:var(--dim);max-width:62ch}
-.eyebrow{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass)}
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
 .notice{border:1px solid var(--line-2);background:var(--panel);border-radius:var(--r);padding:12px 14px;color:var(--dim)}
-.notice.warn{border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:var(--warn-dim);color:var(--text)}
+.notice.warn{border-color:#ecc98a;background:var(--warn-dim);color:var(--text)}
 
-.btn{border:1px solid var(--line-2);background:var(--panel-2);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.btn:hover{border-color:var(--brass)}
-.btn.primary{background:var(--brass);border-color:var(--brass);color:#17130a}
-.btn.primary:hover{background:var(--brass-2)}
+.btn{border:1px solid var(--line-2);background:var(--panel);border-radius:9px;padding:10px 15px;cursor:pointer;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:hover{border-color:var(--text)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.btn.primary:hover{background:#000}
 .btn.ghost{background:transparent}
-.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent);background:transparent}
-.btn.danger.armed{background:var(--bad);color:#1a0d08}
-.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.danger{color:var(--bad);border-color:#eab3a7;background:transparent}
+.btn.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn .ic{width:16px;height:16px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-/* ---------- KPI band ---------- */
-.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.kpi{background:var(--panel);padding:14px 16px;min-width:0}
-.kpi .l{font-size:12px;color:var(--dim)}
-.kpi .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kpi .s{font-size:11.5px;color:var(--faint);margin-top:2px}
+/* ---------- KPI tiles ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0;border-top:4px solid var(--kc,var(--line-2))}
+.kpi .l{font-size:12.5px;color:var(--dim);font-weight:600;display:flex;align-items:center;gap:6px}
+.kpi .l .ic{width:15px;height:15px;color:var(--kc,var(--faint))}
+.kpi .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{font-size:12px;color:var(--faint);margin-top:2px}
 .pos{color:var(--good)} .neg{color:var(--bad)} .warnc{color:var(--warn)} .brassc{color:var(--brass-2)}
 @media (max-width:820px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px}
 @media (max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
-.card h2{font-size:15px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.card h2 small{font-weight:400;color:var(--faint);font-size:12px}
-.card .sub{color:var(--dim);font-size:12.5px;margin:4px 0 12px}
+.card h2{font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h2 .tt{display:flex;align-items:center;gap:8px}
+.card h2 .tt .ic{color:var(--faint)}
+.card h2 small{font-weight:500;color:var(--faint);font-size:12.5px}
+.card .sub{color:var(--dim);font-size:13px;margin:4px 0 12px}
 
 /* bars */
-.bars{display:flex;flex-direction:column;gap:10px;margin-top:12px}
-.bar{display:grid;grid-template-columns:110px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:12.5px}
-.bar .track{height:10px;background:var(--panel-3);border-radius:3px;overflow:hidden;position:relative}
-.bar .fill{position:absolute;top:0;bottom:0;left:0;background:var(--brass);border-radius:3px}
-.bar .fill.neg{background:var(--bad)}
+.bars{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.bar{display:grid;grid-template-columns:130px minmax(0,1fr) 100px;gap:10px;align-items:center;font-size:13px}
+.bar .track{height:12px;background:var(--panel-3);border-radius:6px;overflow:hidden;position:relative}
+.bar .fill{position:absolute;top:0;bottom:0;left:0;background:var(--cc,var(--text));border-radius:6px}
 .bar .v{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+@media (max-width:480px){.bar{grid-template-columns:100px minmax(0,1fr) 84px}}
 
 /* lists */
 .list{display:flex;flex-direction:column}
-.li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-bottom:1px dashed var(--line-2);align-items:center}
+.li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
 .li:last-child{border-bottom:none}
-.li .t{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.li .m{color:var(--faint);font-size:12px;grid-column:1}
-.li .r{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;grid-row:1 / span 2;grid-column:2}
-.li.click{cursor:pointer} .li.click:hover .t{color:var(--brass-2)}
+.li .t{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .m{color:var(--faint);font-size:12.5px;grid-column:1;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.li .r{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;grid-row:1 / span 2;grid-column:2;font-weight:600}
+.li.click{cursor:pointer} .li.click:hover .t{color:var(--info)}
 .empty{color:var(--faint);padding:18px 0;text-align:center}
 
-.chip{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--panel-3);color:var(--dim);white-space:nowrap}
+/* badges: state (with icon) and category (with dot) */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--muted-dim);color:var(--dim);white-space:nowrap;line-height:1.3}
+.chip .ic{width:13px;height:13px;stroke-width:2.2}
 .chip.good{background:var(--good-dim);color:var(--good)} .chip.bad{background:var(--bad-dim);color:var(--bad)}
-.chip.warn{background:var(--warn-dim);color:var(--warn)} .chip.brass{background:var(--brass-dim);color:var(--brass-2)}
+.chip.warn{background:var(--warn-dim);color:var(--warn)} .chip.info{background:var(--info-dim);color:var(--info)}
+.chip.brass{background:var(--brass-dim);color:var(--brass-2)}
+.chip.cat{background:color-mix(in srgb,var(--cc) 11%,#fff);color:var(--cc)}
+.chip.cat::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cc)}
 
 /* ---------- toolbar / table ---------- */
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line-2);border-radius:8px;padding:3px;gap:2px}
-.seg button{border:none;background:transparent;color:var(--dim);padding:6px 11px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12.5px}
-.seg button[aria-pressed="true"]{background:var(--panel-3);color:var(--brass-2)}
-.inp{background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;padding:9px 11px;min-width:0}
-.inp:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px var(--brass-dim)}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line-2);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:none;background:transparent;color:var(--dim);padding:7px 12px;border-radius:7px;cursor:pointer;font-weight:600;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.inp{background:var(--panel);border:1px solid var(--line-2);border-radius:9px;padding:10px 12px;min-width:0}
+.inp:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px var(--info-dim)}
 input.inp.search{flex:1;min-width:160px}
 
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-weight:500;color:var(--faint);font-size:11.5px;padding:10px 12px;border-bottom:1px solid var(--line-2);white-space:nowrap;position:sticky;top:0;background:var(--panel)}
-td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:600;color:var(--faint);font-size:12px;padding:11px 12px;border-bottom:1px solid var(--line-2);white-space:nowrap;position:sticky;top:0;background:var(--panel-2)}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 tbody tr{cursor:pointer} tbody tr:hover td{background:var(--panel-2)}
-td .name{font-weight:500} td .idm{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+tbody tr td:first-child{box-shadow:inset 4px 0 0 var(--rc,transparent)}
+td .name{font-weight:600} td .idm{font-family:var(--f-mono);font-size:11.5px;color:var(--faint)}
 .mcards{display:none;flex-direction:column;gap:8px}
-.mcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;cursor:pointer}
-.mcard .t{font-weight:600;min-width:0}
-.mcard .meta{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;color:var(--faint);font-size:12px}
-.mcard .pr{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.mcard{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--rc,var(--line-2));border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 10px;cursor:pointer}
+.mcard .t{font-weight:700;min-width:0}
+.mcard .meta{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;color:var(--faint);font-size:12.5px}
+.mcard .pr{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:700}
 @media (max-width:760px){.tbl-wrap.responsive{display:none}.mcards{display:flex}}
+.legend{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--faint)}
 
 /* ---------- modal sheet ---------- */
-.ov{position:fixed;inset:0;background:rgba(5,5,4,.66);z-index:20;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 40px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 40px) max(16px,env(safe-area-inset-left,0px))}
-.sheet{background:var(--panel);border:1px solid var(--line-2);border-radius:14px;width:100%;max-width:560px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.ov{position:fixed;inset:0;background:rgba(28,27,24,.45);z-index:20;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 40px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 40px) max(16px,env(safe-area-inset-left,0px))}
+.sheet{background:var(--panel);border:1px solid var(--line-2);border-radius:16px;width:100%;max-width:560px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 24px 70px rgba(28,27,24,.25)}
 .sheet.wide{max-width:720px}
 .sheet-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.sheet-h h2{font-family:var(--f-display);font-weight:800;font-size:21px}
-.x{border:none;background:transparent;color:var(--dim);font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
+.sheet-h h2{font-size:21px}
+.sheet-h .sub{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.x{border:none;background:transparent;color:var(--dim);font-size:24px;line-height:1;cursor:pointer;padding:2px 8px;border-radius:8px}
 .x:hover{color:var(--text);background:var(--panel-3)}
 .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .f{display:flex;flex-direction:column;gap:5px;min-width:0}
 .f.full{grid-column:1 / -1}
-.f label{font-size:12px;color:var(--dim)}
+.f label{font-size:12.5px;color:var(--dim);font-weight:600}
 .f .inp{width:100%}
-.f .hint{font-size:11.5px;color:var(--faint)}
-.check{display:flex;gap:9px;align-items:center;background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;padding:10px 12px;cursor:pointer}
-.check input{accent-color:var(--brass);width:16px;height:16px}
+.f .hint{font-size:12px;color:var(--faint)}
+.check{display:flex;gap:9px;align-items:center;background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;padding:10px 12px;cursor:pointer}
+.check input{accent-color:var(--ink);width:16px;height:16px}
 .sheet-f{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
 @media (max-width:480px){.form{grid-template-columns:minmax(0,1fr)}}
 .kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px}
-.kv div{padding:7px 0;border-bottom:1px dashed var(--line-2)}
+.kv div{padding:8px 0;border-bottom:1px solid var(--line)}
 .kv div:nth-child(even){text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
-.kv .tot{font-weight:600;color:var(--text);border-bottom:1px solid var(--line-2)}
-.err{color:var(--bad);font-size:12.5px;min-height:1em}
+.kv .tot{font-weight:700;color:var(--text);border-bottom:2px solid var(--line-2)}
+.err{color:var(--bad);font-size:13px;min-height:1em}
 
 /* ---------- calculator ---------- */
 .calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:18px;align-items:start}
 .calc .sticky{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}
 @media (max-width:900px){.calc{grid-template-columns:minmax(0,1fr)}.calc .sticky{position:static}}
-.big{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;color:var(--brass-2);margin:6px 0 2px}
-.shiptbl td{padding:7px 4px;font-size:12.5px;cursor:default}
+.big{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;color:var(--text);margin:6px 0 2px}
+.shiptbl td{padding:8px 4px;font-size:13px;cursor:default}
 .shiptbl tr:hover td{background:transparent}
-.shiptbl tr.pick td{color:var(--brass-2)} .shiptbl tr.na td{color:var(--faint)}
+.shiptbl tr.pick td{color:var(--info);font-weight:600} .shiptbl tr.na td{color:var(--faint)}
 
-.login{max-width:400px;margin:40px auto 0;display:flex;flex-direction:column;gap:6px}
-.login h1{font-family:var(--f-display);font-weight:800;font-size:28px}
+.login{max-width:400px;margin:40px auto 0;display:flex;flex-direction:column;gap:8px}
+.login img{width:220px;margin:0 auto 10px;display:block}
+.login h1{font-size:24px}
+.login .btn{justify-content:center;padding:12px}
 /* ---------- toast ---------- */
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 24px);background:var(--panel-3);border:1px solid var(--line-2);padding:10px 16px;border-radius:9px;z-index:30;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 24px);background:var(--ink);color:var(--on-ink);padding:11px 18px;border-radius:10px;z-index:30;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 
-/* ---------- phone: bottom tab bar ---------- */
+/* ---------- phone: bottom tab bar with icons ---------- */
 @media (max-width:760px){
-  .top{backdrop-filter:none;background:var(--bg)}
-  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);border-top:1px solid var(--line-2);
+  .brand img{height:28px}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);border-top:1px solid var(--line-2);gap:2px;
     padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));justify-content:space-between}
-  nav.tabs a{flex:1;text-align:center;padding:8px 2px;font-size:11.5px}
-  main{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+  nav.tabs a{flex:1;flex-direction:column;gap:3px;text-align:center;padding:7px 2px;font-size:11px;border-radius:10px}
+  nav.tabs a .ic{width:21px;height:21px}
+  main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   .top-in{justify-content:space-between}
-  .vhead h1{font-size:24px}
-  .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 80px)}
+  .vhead h1{font-size:23px}
+  .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 86px)}
 }
 </style>
 </head>
 <body>
 <header class="top">
   <div class="top-in">
-    <div class="brand"><b>36WAYS</b><span>Gestão</span></div>
+    <a class="brand" href="#painel" aria-label="36WAYS Gestão"><img src="logo.png" alt="36WAYS"></a>
     <nav class="tabs" id="nav">
-      <a href="#painel" data-v="painel">Painel</a>
-      <a href="#stock" data-v="stock">Stock</a>
-      <a href="#vendas" data-v="vendas">Vendas</a>
-      <a href="#despesas" data-v="despesas">Despesas</a>
-      <a href="#socios" data-v="socios">Sócios</a>
-      <a href="#calculadora" data-v="calculadora">Calc.</a>
+      <a href="#painel" data-v="painel"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel</span></a>
+      <a href="#stock" data-v="stock"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Stock</span></a>
+      <a href="#vendas" data-v="vendas"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Vendas</span></a>
+      <a href="#despesas" data-v="despesas"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span>Despesas</span></a>
+      <a href="#socios" data-v="socios"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span>Sócios</span></a>
+      <a href="#calculadora" data-v="calculadora"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 6.5h7"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5"/></svg><span>Calc.</span></a>
     </nav>
     <div class="row" style="flex-wrap:nowrap"><div class="sync" id="sync"><i></i><span>A ligar…</span></div><button class="btn ghost" id="logout" hidden style="padding:6px 10px">Sair</button></div>
   </div>
@@ -213,11 +235,7 @@ td .name{font-weight:500} td .idm{font-family:var(--f-mono);font-size:11px;color
 <div id="modal"></div>
 
 <script>
-/* ======================= CONFIGURAÇÃO =======================
-   Cola aqui os dois valores do teu projeto Supabase (ver LEIA-ME, passo 4). */
-const SUPABASE_URL = 'https://socsrtwfscynmvwbnlpc.supabase.co';      // ex.: https://abcdefgh.supabase.co
-const SUPABASE_KEY = 'sb_publishable_hdRhjNgjx4wg8Toy82r1kg_LgToYBTO';    // "Publishable key" (sb_publishable_…) ou "anon public". NUNCA a secret / service_role.
-
+/* A ligação ao Supabase está no ficheiro config.js (SUPABASE_URL e SUPABASE_KEY). */
 /* ======================= calculator core ======================= */
 const RATES = {
   small:[[0.1,510],[0.2,690],[0.3,870],[0.4,1050],[0.5,1230],[0.6,1410],[0.7,1590],[0.8,1770],[0.9,1950],[1.0,2130],[1.1,2310],[1.2,2490],[1.3,2670],[1.4,2850],[1.5,3030],[1.6,3210],[1.7,3390],[1.8,3570],[1.9,3750],[2.0,3930]],
@@ -271,6 +289,28 @@ const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','
 const fmtMes=m=>{ if(!m) return '—'; const [y,mm]=m.split('-'); return MESES[+mm-1]+' '+y; };
 const fmtData=d=>{ if(!d) return 'sem data'; const [y,m,dd]=d.split('-'); return +dd+' '+MESES[+m-1]+' '+y; };
 function toast(t){ const el=document.createElement('div'); el.className='toast'; el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
+
+
+/* ======================= icons, colours, states ======================= */
+const ICONS={"painel": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1.5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\" rx=\"1.5\"/>", "stock": "<path d=\"M21 8l-9-5-9 5 9 5 9-5z\"/><path d=\"M3 8v8l9 5 9-5V8\"/><path d=\"M12 13v8\"/>", "vendas": "<path d=\"M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z\"/><circle cx=\"7.5\" cy=\"7.5\" r=\"1.5\"/>", "despesas": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6M9 16h3\"/>", "socios": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20a6.5 6.5 0 0 1 13 0\"/><path d=\"M16 4.6a3.5 3.5 0 0 1 0 6.8\"/><path d=\"M18 14a6.5 6.5 0 0 1 3.5 6\"/>", "calculadora": "<rect x=\"5\" y=\"2.5\" width=\"14\" height=\"19\" rx=\"2\"/><path d=\"M8.5 6.5h7\"/><path d=\"M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5\"/>", "ok": "<path d=\"M5 12.5l4.5 4.5L19 7.5\"/>", "esgotado": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M8 12h8\"/>", "prejuizo": "<path d=\"M3 7l6.5 6.5 4-4L21 17\"/><path d=\"M15 17h6v-6\"/>", "alerta": "<path d=\"M12 3.5l9 16H3z\"/><path d=\"M12 10v4.5M12 17.2h.01\"/>", "parado": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M12 7.5V12l3 2\"/>", "lucro": "<path d=\"M3 17l6.5-6.5 4 4L21 7\"/><path d=\"M15 7h6v6\"/>", "resultado": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M8.5 10.5h7M8.5 13.5h7\"/>", "moedas": "<ellipse cx=\"12\" cy=\"6\" rx=\"7\" ry=\"3\"/><path d=\"M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6\"/><path d=\"M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6\"/>", "evento": "<rect x=\"3.5\" y=\"5\" width=\"17\" height=\"15\" rx=\"2\"/><path d=\"M3.5 10h17M8 3v4M16 3v4\"/>", "mais": "<path d=\"M12 5v14M5 12h14\"/>", "caixa": "<rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><path d=\"M3 12h18\"/>"};
+const ic=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]||''}</svg>`;
+const CAT_COR={'Jantes':'--c-jantes','Peças':'--c-pecas','Roupa':'--c-roupa','Colecionáveis':'--c-colec','Acessórios':'--c-acess','Outro':'--c-outro'};
+const catChip=c=>`<span class="chip cat" style="--cc:var(${CAT_COR[c]||'--c-outro'})">${esc(c||'Outro')}</span>`;
+const DESP_COR={'Jauce':'--c-jantes','Alfândega':'--c-jantes','Envio':'--c-jantes','Shopify':'--c-pecas','Domínio':'--c-pecas','Ferramentas':'--c-pecas','Stand':'--c-roupa','Marketing':'--c-pink','Por classificar':'--warn','Outro':'--c-outro'};
+const despChip=c=>`<span class="chip cat" style="--cc:var(${DESP_COR[c]||'--c-outro'})">${esc(c||'—')}</span>`;
+const CANAL_COR={'Evento':'--c-roupa','Instagram':'--c-pink','Loja online':'--c-jantes','OLX / Vinted':'--c-pecas','Outro':'--c-outro','Histórico':'--c-outro'};
+const canalChip=c=>`<span class="chip cat" style="--cc:var(${CANAL_COR[c]||'--c-outro'})">${esc(c||'—')}</span>`;
+// one clear state per product, in order of what matters most
+function estado(p){
+  const dp=num(S.config.diasParado)||60;
+  if(p.emStock<=0) return {k:'esgotado',t:'Esgotado',cls:'',cor:'--line-2'};
+  if(p.precoUnit==null||p.precoUnit===0) return {k:'alerta',t:'Sem preço',cls:'warn',cor:'--warn'};
+  if(p.margemUnit<0) return {k:'prejuizo',t:'Prejuízo',cls:'bad',cor:'--bad'};
+  if(p.dias!=null&&p.dias>dp) return {k:'parado',t:'Parado',cls:'info',cor:'--info'};
+  return {k:'ok',t:'À venda',cls:'good',cor:'--good'};
+}
+const estadoChip=p=>{ const e=estado(p); return `<span class="chip ${e.cls}">${ic(e.k)}${e.t}</span>`; };
+const LEGENDA=`<div class="legend">${[['ok','À venda','good'],['alerta','Sem preço','warn'],['prejuizo','Prejuízo','bad'],['parado','Parado','info'],['esgotado','Esgotado','']].map(([k,t,c])=>`<span class="chip ${c}">${ic(k)}${t}</span>`).join('')}</div>`;
 
 const CATS_PROD=['Jantes','Peças','Roupa','Colecionáveis','Acessórios','Outro'];
 const CATS_DESP=['Jauce','Alfândega','Envio','Shopify','Domínio','Ferramentas','Stand','Marketing','Por classificar','Outro'];
@@ -353,8 +393,9 @@ function makeDb(sb){
 }
 
 function showLogin(msg){
+  $('#nav').hidden=true;
   $('#main').innerHTML=`<div class="login card">
-    <div class="eyebrow">36WAYS · Gestão</div><h1>Entrar</h1>
+    <img src="logo.png" alt="36WAYS"><h1>Entrar</h1>
     <p class="sub">Só para os sócios da 36WAYS.</p>
     <form id="login" class="form" style="grid-template-columns:minmax(0,1fr)">
       <div class="f"><label for="l-email">Email</label><input class="inp" id="l-email" type="email" autocomplete="username" required></div>
@@ -368,13 +409,18 @@ function showLogin(msg){
 }
 
 async function boot(){
-  if(!window.supabase||(SUPABASE_URL+SUPABASE_KEY).includes('COLOCA')){ setSync('off','Por configurar');
-    $('#main').innerHTML='<div class="notice warn">Falta ligar a app à base de dados: preenche SUPABASE_URL e SUPABASE_KEY no início do ficheiro index.html (ver LEIA-ME).</div>'; return; }
-  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  if(!window.supabase||typeof SUPABASE_URL==='undefined'||typeof SUPABASE_KEY==='undefined'||(SUPABASE_URL+SUPABASE_KEY).includes('COLOCA')){ setSync('off','Por configurar');
+    $('#main').innerHTML='<div class="notice warn">Falta ligar a app à base de dados: preenche SUPABASE_URL e SUPABASE_KEY no ficheiro config.js (ver LEIA-ME).</div>'; return; }
+  // aceita o endereço em qualquer forma: com /rest/v1, com barra no fim, ou o link do painel
+  let url=SUPABASE_URL.trim();
+  const dash=url.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i);
+  if(dash) url='https://'+dash[1]+'.supabase.co';
+  const m=url.match(/^(https?:\/\/[^\/]+)/i); if(m) url=m[1];
+  SB=window.supabase.createClient(url,SUPABASE_KEY.trim());
   const start=async session=>{
     if(!session){ setSync('off','Sem sessão'); $('#logout').hidden=true; showLogin(); return; }
     if(S.db) return;
-    USER_EMAIL=session.user.email||''; $('#logout').hidden=false;
+    USER_EMAIL=session.user.email||''; $('#logout').hidden=false; $('#nav').hidden=false;
     setSync('','A ligar…'); render();
     const db=makeDb(SB); S.db=db;
     const sub=(name)=>db.collection(name).onSnapshot(snap=>{
@@ -421,7 +467,7 @@ function banner(){
   return '';
 }
 function head(eyebrow,title,sub,actions=''){
-  return `<div class="vhead"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${sub?`<p>${sub}</p>`:''}</div><div class="row">${actions}</div></div>`;
+  return `<div class="vhead"><div><div class="eyebrow">${eyebrow}</div><h1>${ic(curView())}${title}</h1>${sub?`<p>${sub}</p>`:''}</div><div class="row">${actions}</div></div>`;
 }
 
 /* ======================= PAINEL ======================= */
@@ -456,35 +502,35 @@ function viewPainel(P){
   if(!S.produtos.size&&!S.offline) return head('Visão geral','Painel','')+`<div class="notice">Ainda não há produtos. Começa em <a href="#stock">Stock</a> ou usa a <a href="#calculadora">Calculadora</a> e grava a peça.</div>`;
 
   return head('Visão geral','Painel','Tudo o que foi comprado, vendido e gasto, a partir dos registos dos três.',
-      `<button class="btn primary" data-act="nova-venda">+ Venda</button><button class="btn" data-act="nova-despesa">+ Despesa</button>`)+`
+      `<button class="btn primary" data-act="nova-venda">${ic('mais')}Venda</button><button class="btn" data-act="nova-despesa">${ic('mais')}Despesa</button>`)+`
   <div class="kpis">
-    <div class="kpi"><div class="l">Vendas registadas</div><div class="n">${eur(receita)}</div><div class="s">${V.length} vendas${estimadas?` · ${estimadas} com preço estimado`:''}</div></div>
-    <div class="kpi"><div class="l">Lucro das vendas</div><div class="n ${lucroBruto>=0?'pos':'neg'}">${eur(lucroBruto)}</div><div class="s">preço − custo da peça − portes</div></div>
-    <div class="kpi"><div class="l">Despesas de funcionamento</div><div class="n">${eur(opex)}</div><div class="s">Shopify, stand, marketing… · equipamento ${eur0(equip)} à parte</div></div>
-    <div class="kpi"><div class="l">Resultado</div><div class="n ${resultado>=0?'pos':'neg'}">${eur(resultado)}</div><div class="s">lucro das vendas − funcionamento</div></div>
-    <div class="kpi"><div class="l">Em stock</div><div class="n">${unidades} un.</div><div class="s">${inStock.length} produtos</div></div>
-    <div class="kpi"><div class="l">Stock ao custo</div><div class="n">${eur(valorCusto)}</div><div class="s">dinheiro parado em peças</div></div>
-    <div class="kpi"><div class="l">Stock a preço de venda</div><div class="n brassc">${eur(valorVenda)}</div><div class="s">lucro possível ${eur0(valorVenda-valorCusto)}</div></div>
-    <div class="kpi"><div class="l">Total gasto (despesas)</div><div class="n">${eur(investido)}</div><div class="s">${evManual?`+ ${eur0(evManual)} vendidos em eventos sem registo por peça`:'todas as saídas de dinheiro'}</div></div>
+    <div class="kpi" style="--kc:var(--c-jantes)"><div class="l">${ic('vendas')}Vendas registadas</div><div class="n">${eur(receita)}</div><div class="s">${V.length} vendas${estimadas?` · ${estimadas} com preço estimado`:''}</div></div>
+    <div class="kpi" style="--kc:var(--good)"><div class="l">${ic('lucro')}Lucro das vendas</div><div class="n ${lucroBruto>=0?'pos':'neg'}">${eur(lucroBruto)}</div><div class="s">preço − custo da peça − portes</div></div>
+    <div class="kpi" style="--kc:var(--c-pink)"><div class="l">${ic('despesas')}Despesas de funcionamento</div><div class="n">${eur(opex)}</div><div class="s">Shopify, stand, marketing… · equipamento ${eur0(equip)} à parte</div></div>
+    <div class="kpi" style="--kc:var(--text)"><div class="l">${ic('resultado')}Resultado</div><div class="n ${resultado>=0?'pos':'neg'}">${eur(resultado)}</div><div class="s">lucro das vendas − funcionamento</div></div>
+    <div class="kpi" style="--kc:var(--c-pecas)"><div class="l">${ic('stock')}Em stock</div><div class="n">${unidades} un.</div><div class="s">${inStock.length} produtos</div></div>
+    <div class="kpi" style="--kc:var(--c-colec)"><div class="l">${ic('moedas')}Stock ao custo</div><div class="n">${eur(valorCusto)}</div><div class="s">dinheiro parado em peças</div></div>
+    <div class="kpi" style="--kc:var(--c-roupa)"><div class="l">${ic('vendas')}Stock a preço de venda</div><div class="n brassc">${eur(valorVenda)}</div><div class="s">lucro possível ${eur0(valorVenda-valorCusto)}</div></div>
+    <div class="kpi" style="--kc:var(--faint)"><div class="l">${ic('despesas')}Total gasto (despesas)</div><div class="n">${eur(investido)}</div><div class="s">${evManual?`+ ${eur0(evManual)} vendidos em eventos sem registo por peça`:'todas as saídas de dinheiro'}</div></div>
   </div>
   <div class="grid2">
     <div class="card">
-      <h2>Precisa de atenção <small>${abaixo.length+semPreco.length+parados.length+(porClass.length?1:0)} pontos</small></h2>
+      <h2><span class="tt">${ic('alerta')}Precisa de atenção</span><small>${abaixo.length+semPreco.length+parados.length+(porClass.length?1:0)} pontos</small></h2>
       <div class="sub">Peças que perdem dinheiro ao preço atual, sem preço, ou paradas há mais de ${dp} dias.</div>
       <div class="list">
-        ${abaixo.map(p=>`<div class="li click" data-prod="${esc(p.id)}"><div class="t">${esc(p.nome)}</div><div class="m"><span class="chip bad">Abaixo do custo</span> custa ${eur(p.custoUnit)} · pede ${eur(p.precoUnit)}</div><div class="r neg">${eur(p.margemUnit)}</div></div>`).join('')}
-        ${semPreco.map(p=>`<div class="li click" data-prod="${esc(p.id)}"><div class="t">${esc(p.nome)}</div><div class="m"><span class="chip warn">Sem preço</span> custa ${eur(p.custoUnit)}</div><div class="r">${p.emStock} un.</div></div>`).join('')}
-        ${parados.slice(0,5).map(p=>`<div class="li click" data-prod="${esc(p.id)}"><div class="t">${esc(p.nome)}</div><div class="m"><span class="chip">Parado ${Math.round(p.dias/30)} meses</span> ${p.emStock} un. ao custo</div><div class="r">${eur(p.custoUnit*p.emStock)}</div></div>`).join('')}
+        ${abaixo.map(p=>`<div class="li click" data-prod="${esc(p.id)}"><div class="t">${esc(p.nome)}</div><div class="m"><span class="chip bad">${ic('prejuizo')}Prejuízo</span> custa ${eur(p.custoUnit)} · pede ${eur(p.precoUnit)}</div><div class="r neg">${eur(p.margemUnit)}</div></div>`).join('')}
+        ${semPreco.map(p=>`<div class="li click" data-prod="${esc(p.id)}"><div class="t">${esc(p.nome)}</div><div class="m"><span class="chip warn">${ic('alerta')}Sem preço</span> custa ${eur(p.custoUnit)}</div><div class="r">${p.emStock} un.</div></div>`).join('')}
+        ${parados.slice(0,5).map(p=>`<div class="li click" data-prod="${esc(p.id)}"><div class="t">${esc(p.nome)}</div><div class="m"><span class="chip info">${ic('parado')}Parado ${Math.round(p.dias/30)} meses</span> ${p.emStock} un. ao custo</div><div class="r">${eur(p.custoUnit*p.emStock)}</div></div>`).join('')}
         ${parados.length>5?`<div class="li"><div class="m">+ ${parados.length-5} peças paradas · ver em <a href="#stock">Stock</a></div></div>`:''}
-        ${porClass.length?`<div class="li click" data-goto="despesas"><div class="t">Despesas por classificar</div><div class="m"><span class="chip warn">${porClass.length} lançamentos</span> sem categoria, não entram no resultado</div><div class="r">${eur(porClass.reduce((s,d)=>s+num(d.valor),0))}</div></div>`:''}
+        ${porClass.length?`<div class="li click" data-goto="despesas"><div class="t">Despesas por classificar</div><div class="m"><span class="chip warn">${ic('alerta')}${porClass.length} lançamentos</span> sem categoria, não entram no resultado</div><div class="r">${eur(porClass.reduce((s,d)=>s+num(d.valor),0))}</div></div>`:''}
         ${!(abaixo.length+semPreco.length+parados.length+porClass.length)?'<div class="empty">Nada pendente.</div>':''}
       </div>
     </div>
     <div class="card">
-      <h2>Stock por categoria <small>ao custo · lucro possível</small></h2>
+      <h2><span class="tt">${ic('stock')}Stock por categoria</span><small>ao custo · lucro possível</small></h2>
       <div class="sub">Onde está o dinheiro parado e quanto rende se vender ao preço pedido.</div>
       <div class="bars">
-        ${catArr.map(([c,v])=>`<div class="bar"><div>${esc(c)} <span class="mono" style="color:var(--faint)">${v.n}</span></div><div class="track"><div class="fill" style="width:${(v.custo/maxC*100).toFixed(1)}%"></div></div><div class="v">${eur0(v.custo)} <span class="${v.lucro>=0?'pos':'neg'}">${v.lucro>=0?'+':''}${eur0(v.lucro)}</span></div></div>`).join('')||'<div class="empty">Sem stock.</div>'}
+        ${catArr.map(([c,v])=>`<div class="bar"><div>${catChip(c)} <span class="mono" style="color:var(--faint)">${v.n}</span></div><div class="track"><div class="fill" style="--cc:var(${CAT_COR[c]||'--c-outro'});width:${(v.custo/maxC*100).toFixed(1)}%"></div></div><div class="v">${eur0(v.custo)} <span class="${v.lucro>=0?'pos':'neg'}">${v.lucro>=0?'+':''}${eur0(v.lucro)}</span></div></div>`).join('')||'<div class="empty">Sem stock.</div>'}
       </div>
     </div>
   </div>
@@ -503,7 +549,7 @@ function eventoNumeros(e,pmap){
 }
 function viewEventosResumo(pmap){
   const E=[...S.eventos.values()].sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
-  return `<div class="card"><h2>Eventos <small><button class="btn ghost" data-act="novo-evento">+ Evento</button></small></h2>
+  return `<div class="card"><h2><span class="tt">${ic('evento')}Eventos</span><button class="btn ghost" data-act="novo-evento">${ic('mais')}Evento</button></h2>
     <div class="sub">Receita, custo do espaço e equipamento (tenda, luzes) separados: o equipamento paga-se uma vez e serve para os próximos.</div>
     <div class="list">${E.map(e=>{ const n=eventoNumeros(e,pmap);
       return `<div class="li click" data-evento="${esc(e.id)}"><div class="t">${esc(e.nome)} <span class="m">· ${fmtData(e.data)}</span></div>
@@ -520,10 +566,10 @@ function viewStock(P){
   if(q) L=L.filter(p=>(p.nome+' '+p.id+' '+(p.encomenda||'')).toLowerCase().includes(q));
   const tot=L.reduce((s,p)=>s+p.custoUnit*Math.max(p.emStock,0),0);
   const dp=num(S.config.diasParado)||60;
-  const margemChip=p=>p.precoUnit==null?'<span class="chip warn">sem preço</span>':`<span class="${p.margemUnit<0?'neg':p.margemPct<0.25?'warnc':'pos'}">${pct(p.margemPct)}</span>`;
+  const margemChip=p=>p.precoUnit==null?'<span style="color:var(--faint)">—</span>':`<span class="${p.margemUnit<0?'neg':p.margemPct<0.25?'warnc':'pos'}">${pct(p.margemPct)}</span>`;
   const stockTxt=p=>`${p.emStock}/${p.qtd}`;
   return head('Inventário','Stock',`${L.length} produtos · ${eur(tot)} ao custo nas unidades em stock.`,
-      `<button class="btn primary" data-act="novo-produto">+ Produto</button>`)+`
+      `<button class="btn primary" data-act="novo-produto">${ic('mais')}Produto</button>`)+`
   <div class="toolbar">
     <div class="seg" role="group" aria-label="Filtro">
       ${[['stock','Em stock'],['esgotado','Esgotados'],['todos','Todos']].map(([k,l])=>`<button data-filtro="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}
@@ -531,13 +577,14 @@ function viewStock(P){
     <select class="inp" id="stockCat" aria-label="Categoria"><option value="">Todas as categorias</option>${CATS_PROD.map(c=>`<option ${c===cat?'selected':''}>${c}</option>`).join('')}</select>
     <input class="inp search" id="stockQ" placeholder="Procurar nome, ID ou nº de encomenda" value="${esc(S.ui.stockQ)}">
   </div>
+  ${LEGENDA}
   <div class="tbl-wrap responsive"><table>
-    <thead><tr><th>Produto</th><th>Categoria</th><th class="n">Stock</th><th class="n">Custo un.</th><th class="n">Preço un.</th><th class="n">Margem</th><th>Comprado</th></tr></thead>
-    <tbody>${L.map(p=>`<tr data-prod="${esc(p.id)}"><td><div class="name">${esc(p.nome)}</div><div class="idm">#${esc(p.id)}${p.quebra?` · quebra ${p.quebra}`:''}</div></td>
-      <td><span class="chip">${esc(p.categoria||'—')}</span></td><td class="n">${stockTxt(p)}</td><td class="n">${eur(p.custoUnit)}</td><td class="n">${p.precoUnit!=null?eur(p.precoUnit):'—'}</td><td class="n">${margemChip(p)}</td>
-      <td>${fmtMes(p.mes)} ${p.emStock>0&&p.dias>dp?'<span class="chip">parado</span>':''}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">Nenhum produto.</td></tr>'}</tbody></table></div>
-  <div class="mcards">${L.map(p=>`<div class="mcard" data-prod="${esc(p.id)}"><div class="t">${esc(p.nome)}</div><div class="pr">${p.precoUnit!=null?eur(p.precoUnit):'—'}</div>
-    <div class="meta"><span class="chip">${esc(p.categoria||'—')}</span><span class="mono">#${esc(p.id)}</span><span>stock ${stockTxt(p)}</span><span>custo ${eur(p.custoUnit)}</span>${margemChip(p)}${p.emStock>0&&p.dias>dp?'<span class="chip">parado</span>':''}</div></div>`).join('')||'<div class="empty">Nenhum produto.</div>'}</div>`;
+    <thead><tr><th>Produto</th><th>Estado</th><th>Categoria</th><th class="n">Stock</th><th class="n">Custo un.</th><th class="n">Preço un.</th><th class="n">Margem</th><th>Comprado</th></tr></thead>
+    <tbody>${L.map(p=>`<tr data-prod="${esc(p.id)}" style="--rc:var(${estado(p).cor})"><td><div class="name">${esc(p.nome)}</div><div class="idm">#${esc(p.id)}${p.quebra?` · quebra ${p.quebra}`:''}</div></td>
+      <td>${estadoChip(p)}</td><td>${catChip(p.categoria)}</td><td class="n">${stockTxt(p)}</td><td class="n">${eur(p.custoUnit)}</td><td class="n">${p.precoUnit!=null?eur(p.precoUnit):'—'}</td><td class="n">${margemChip(p)}</td>
+      <td>${fmtMes(p.mes)}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">Nenhum produto.</td></tr>'}</tbody></table></div>
+  <div class="mcards">${L.map(p=>`<div class="mcard" data-prod="${esc(p.id)}" style="--rc:var(${estado(p).cor})"><div class="t">${esc(p.nome)}</div><div class="pr">${p.precoUnit!=null?eur(p.precoUnit):'—'}</div>
+    <div class="meta">${estadoChip(p)}${catChip(p.categoria)}<span>stock ${stockTxt(p)}</span><span>custo ${eur(p.custoUnit)}</span>${margemChip(p)}</div></div>`).join('')||'<div class="empty">Nenhum produto.</div>'}</div>`;
 }
 
 /* ======================= VENDAS ======================= */
@@ -546,14 +593,14 @@ function viewVendas(P){
   const V=[...S.vendas.values()].sort((a,b)=>String(b.data||'').localeCompare(String(a.data||''))||String(b.id).localeCompare(String(a.id)));
   const rec=V.reduce((s,v)=>s+num(v.preco),0), luc=V.reduce((s,v)=>s+vendaLucro(v,pmap),0);
   return head('Saídas de stock','Vendas',`${V.length} vendas · ${eur(rec)} recebidos · ${eur(luc)} de lucro.`,
-      `<button class="btn primary" data-act="nova-venda">+ Registar venda</button>`)+`
+      `<button class="btn primary" data-act="nova-venda">${ic('mais')}Registar venda</button>`)+`
   <div class="tbl-wrap responsive"><table><thead><tr><th>Data</th><th>Produto</th><th>Canal</th><th>Recebido por</th><th class="n">Qtd</th><th class="n">Preço</th><th class="n">Lucro</th></tr></thead>
   <tbody>${V.map(v=>{ const p=pmap.get(v.produtoId); const l=vendaLucro(v,pmap);
-    return `<tr data-venda="${esc(v.id)}"><td>${fmtData(v.data)}</td><td><div class="name">${esc(p?p.nome:'Produto apagado')}</div><div class="idm">#${esc(v.produtoId)}${v.estimado?' · preço estimado':''}</div></td>
-    <td>${esc(v.canal||'—')}${v.eventoId&&S.eventos.get(v.eventoId)?' · '+esc(S.eventos.get(v.eventoId).nome):''}</td><td>${esc(v.recebidoPor||'—')}</td><td class="n">${num(v.qtd)}</td><td class="n">${eur(num(v.preco))}</td><td class="n ${l>=0?'pos':'neg'}">${eur(l)}</td></tr>`; }).join('')||'<tr><td colspan="7" class="empty">Ainda sem vendas.</td></tr>'}</tbody></table></div>
+    return `<tr data-venda="${esc(v.id)}" style="--rc:var(${CANAL_COR[v.canal]||'--c-outro'})"><td>${fmtData(v.data)}</td><td><div class="name">${esc(p?p.nome:'Produto apagado')}</div><div class="idm">#${esc(v.produtoId)}${v.estimado?' · preço estimado':''}</div></td>
+    <td>${canalChip(v.canal)}${v.eventoId&&S.eventos.get(v.eventoId)?' <span class="idm">'+esc(S.eventos.get(v.eventoId).nome)+'</span>':''}</td><td>${esc(v.recebidoPor||'—')}</td><td class="n">${num(v.qtd)}</td><td class="n">${eur(num(v.preco))}</td><td class="n ${l>=0?'pos':'neg'}">${eur(l)}</td></tr>`; }).join('')||'<tr><td colspan="7" class="empty">Ainda sem vendas.</td></tr>'}</tbody></table></div>
   <div class="mcards">${V.map(v=>{ const p=pmap.get(v.produtoId); const l=vendaLucro(v,pmap);
-    return `<div class="mcard" data-venda="${esc(v.id)}"><div class="t">${esc(p?p.nome:'Produto apagado')}</div><div class="pr">${eur(num(v.preco))}</div>
-    <div class="meta"><span>${fmtData(v.data)}</span><span class="chip">${esc(v.canal||'—')}</span><span>${num(v.qtd)} un.</span><span class="${l>=0?'pos':'neg'}">lucro ${eur(l)}</span>${v.estimado?'<span class="chip warn">estimado</span>':''}</div></div>`; }).join('')||'<div class="empty">Ainda sem vendas.</div>'}</div>`;
+    return `<div class="mcard" data-venda="${esc(v.id)}" style="--rc:var(${CANAL_COR[v.canal]||'--c-outro'})"><div class="t">${esc(p?p.nome:'Produto apagado')}</div><div class="pr">${eur(num(v.preco))}</div>
+    <div class="meta"><span>${fmtData(v.data)}</span>${canalChip(v.canal)}<span>${num(v.qtd)} un.</span><span class="${l>=0?'pos':'neg'}">lucro ${eur(l)}</span>${v.estimado?'<span class="chip warn">estimado</span>':''}</div></div>`; }).join('')||'<div class="empty">Ainda sem vendas.</div>'}</div>`;
 }
 
 /* ======================= DESPESAS ======================= */
@@ -564,17 +611,17 @@ function viewDespesas(P){
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]); const max=Math.max(1,...cats.map(c=>c[1]));
   const pmap=new Map(P.map(p=>[p.id,p]));
   return head('Saídas de dinheiro','Despesas',`${D.length} lançamentos · ${eur(tot)} no total.`,
-      `<button class="btn" data-act="novo-evento">+ Evento</button><button class="btn primary" data-act="nova-despesa">+ Despesa</button>`)+`
+      `<button class="btn" data-act="novo-evento">${ic('mais')}Evento</button><button class="btn primary" data-act="nova-despesa">${ic('mais')}Despesa</button>`)+`
   <div class="grid2">
-    <div class="card"><h2>Por categoria</h2><div class="sub">Jauce, Alfândega e Envio são compra de stock; o resto é funcionamento.</div>
-      <div class="bars">${cats.map(([c,v])=>`<div class="bar"><div>${esc(c)}</div><div class="track"><div class="fill" style="width:${(v/max*100).toFixed(1)}%;${STOCK_CATS.has(c)?'':'background:var(--dim)'}"></div></div><div class="v">${eur0(v)}</div></div>`).join('')}</div></div>
+    <div class="card"><h2><span class="tt">${ic('despesas')}Por categoria</span></h2><div class="sub">Jauce, Alfândega e Envio são compra de stock; o resto é funcionamento.</div>
+      <div class="bars">${cats.map(([c,v])=>`<div class="bar"><div>${despChip(c)}</div><div class="track"><div class="fill" style="--cc:var(${DESP_COR[c]||'--c-outro'});width:${(v/max*100).toFixed(1)}%"></div></div><div class="v">${eur0(v)}</div></div>`).join('')}</div></div>
     ${viewEventosResumo(pmap)}
   </div>
   <div class="tbl-wrap responsive"><table><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Pago por</th><th>Banco</th><th class="n">Valor</th></tr></thead>
-  <tbody>${D.map(d=>`<tr data-despesa="${esc(d.id)}"><td>${fmtData(d.data)}</td><td><div class="name">${esc(d.descricao||'—')}</div>${d.eventoId&&S.eventos.get(d.eventoId)?`<div class="idm">${esc(S.eventos.get(d.eventoId).nome)}${d.equipamento?' · equipamento':''}</div>`:''}</td>
-    <td><span class="chip ${d.categoria==='Por classificar'?'warn':''}">${esc(d.categoria)}</span></td><td>${esc(d.pessoa)}</td><td>${esc(d.banco||'—')}</td><td class="n">${eur(num(d.valor))}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sem despesas.</td></tr>'}</tbody></table></div>
-  <div class="mcards">${D.map(d=>`<div class="mcard" data-despesa="${esc(d.id)}"><div class="t">${esc(d.descricao||d.categoria)}</div><div class="pr">${eur(num(d.valor))}</div>
-    <div class="meta"><span>${fmtData(d.data)}</span><span class="chip ${d.categoria==='Por classificar'?'warn':''}">${esc(d.categoria)}</span><span>${esc(d.pessoa)}</span>${d.equipamento?'<span class="chip brass">equipamento</span>':''}</div></div>`).join('')}</div>`;
+  <tbody>${D.map(d=>`<tr data-despesa="${esc(d.id)}" style="--rc:var(${DESP_COR[d.categoria]||'--c-outro'})"><td>${fmtData(d.data)}</td><td><div class="name">${esc(d.descricao||'—')}</div>${d.eventoId&&S.eventos.get(d.eventoId)?`<div class="idm">${esc(S.eventos.get(d.eventoId).nome)}${d.equipamento?' · equipamento':''}</div>`:''}</td>
+    <td>${despChip(d.categoria)}</td><td>${esc(d.pessoa)}</td><td>${esc(d.banco||'—')}</td><td class="n">${eur(num(d.valor))}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sem despesas.</td></tr>'}</tbody></table></div>
+  <div class="mcards">${D.map(d=>`<div class="mcard" data-despesa="${esc(d.id)}" style="--rc:var(${DESP_COR[d.categoria]||'--c-outro'})"><div class="t">${esc(d.descricao||d.categoria)}</div><div class="pr">${eur(num(d.valor))}</div>
+    <div class="meta"><span>${fmtData(d.data)}</span>${despChip(d.categoria)}<span>${esc(d.pessoa)}</span>${d.equipamento?'<span class="chip brass">equipamento</span>':''}</div></div>`).join('')}</div>`;
 }
 
 /* ======================= SÓCIOS ======================= */
@@ -596,8 +643,8 @@ function viewSocios(){
     return `<div class="li"><div class="t">${esc(s)}</div><div class="m">${v>0?'deve receber dos outros':'deve pagar aos outros'}</div><div class="r ${v>0?'pos':'neg'}">${eur(Math.abs(v))}</div></div>`; }).join('');
   return head('Acerto de contas','Sócios','Divisão igual a três. Conta o que cada um pagou em despesas menos o dinheiro de vendas que ficou com cada um.')+`
   <div class="grid2">
-    <div class="card"><h2>Quem deve a quem</h2><div class="sub">Saldo positivo: deve receber. Saldo negativo: deve pagar.</div><div class="list">${concl}</div></div>
-    <div class="card"><h2>Caixa da empresa</h2><div class="sub">Dinheiro que não está no bolso de nenhum sócio.</div>
+    <div class="card"><h2><span class="tt">${ic('socios')}Quem deve a quem</span></h2><div class="sub">Saldo positivo: deve receber. Saldo negativo: deve pagar.</div><div class="list">${concl}</div></div>
+    <div class="card"><h2><span class="tt">${ic('caixa')}Caixa da empresa</span></h2><div class="sub">Dinheiro que não está no bolso de nenhum sócio.</div>
       <div class="kv"><div>Vendas recebidas para a caixa</div><div>${eur(r.caixaRec)}</div><div>Despesas pagas com lucros</div><div>${eur(r.caixaPag)}</div><div class="tot">Saldo da caixa</div><div class="tot ${r.caixaRec-r.caixaPag>=0?'pos':'neg'}">${eur(r.caixaRec-r.caixaPag)}</div></div>
       ${r.caixaRec-r.caixaPag<0?'<p class="sub" style="margin-top:10px">Saldo negativo quer dizer que há vendas cujo dinheiro foi para a caixa e não foram registadas com "Recebido por: Caixa".</p>':''}
     </div>
@@ -676,7 +723,7 @@ function closeModal(){ $('#modal').innerHTML=''; }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 const opt=(arr,sel)=>arr.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
 const optKV=(arr,sel)=>arr.map(([k,l])=>`<option value="${esc(k)}" ${k===sel?'selected':''}>${esc(l)}</option>`).join('');
-const sheetHead=(t,sub)=>`<div class="sheet-h"><div><h2>${t}</h2>${sub?`<div class="sub" style="margin:4px 0 0">${sub}</div>`:''}</div><button class="x" data-close aria-label="Fechar">×</button></div>`;
+const sheetHead=(t,sub)=>`<div class="sheet-h"><div><h2>${t}</h2>${sub?`<div class="sub" style="margin:6px 0 0;color:var(--dim)">${sub}</div>`:''}</div><button class="x" data-close aria-label="Fechar">×</button></div>`;
 const delBtn=(what)=>`<button class="btn danger" data-del="${what}" type="button">Apagar</button>`;
 function field(id,label,val,opts={}){ const t=opts.type||'text'; return `<div class="f ${opts.full?'full':''}"><label for="${id}">${label}</label><input class="inp ${t==='number'?'num':''}" id="${id}" type="${t}" ${t==='number'?'inputmode="decimal" step="any"':''} value="${esc(val??'')}" ${opts.req?'required':''}>${opts.hint?`<div class="hint">${opts.hint}</div>`:''}</div>`; }
 
@@ -685,7 +732,7 @@ function produtoDetalhe(id){
   const vendas=[...S.vendas.values()].filter(v=>v.produtoId===id);
   const pmap=new Map(P.map(x=>[x.id,x]));
   const j=p.jauce;
-  openModal(sheetHead(esc(p.nome),`#${esc(p.id)} · ${esc(p.categoria||'')} · comprado ${fmtMes(p.mes)}${p.encomenda?' · '+esc(p.encomenda):''}`)+`
+  openModal(sheetHead(esc(p.nome),`${estadoChip(p)}${catChip(p.categoria)}<span class="idm">#${esc(p.id)} · comprado ${fmtMes(p.mes)}${p.encomenda?' · '+esc(p.encomenda):''}</span>`)+`
     <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
       <div class="kpi"><div class="l">Em stock</div><div class="n">${p.emStock}/${p.qtd}</div><div class="s">${p.vendidas} vendidas${p.quebra?` · ${p.quebra} quebra`:''}</div></div>
       <div class="kpi"><div class="l">Custo un.</div><div class="n">${eur(p.custoUnit)}</div></div>
